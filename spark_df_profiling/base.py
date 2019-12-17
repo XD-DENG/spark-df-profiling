@@ -345,10 +345,9 @@ def describe(df, bins, corr_reject, config, **kwargs):
         # Get the top 50 classes by value count,
         # and put the rest of them grouped at the
         # end of the Series:
-        top_50 = value_counts.limit(50).toPandas().sort_values("count({c})".format(c=column),
-                                                               ascending=False)
+        top_50 = value_counts.limit(50).toPandas()
 
-        stats = top_50.take([0]).rename(columns={column: 'top', f'count({column})': 'freq'}).ix[0]
+        stats = top_50.take([0]).rename(columns={column: 'top', f'count({column})': 'freq'}).iloc[0]
 
         if top_50.shape[0] > 50:
             others_count = pd.Series([value_counts.select(df_sum("count({c})".format(c=column))).toPandas.iloc[0, 0] - top_50["count({c})".format(c=column)].sum()],
