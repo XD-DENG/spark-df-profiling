@@ -349,21 +349,18 @@ def describe(df, bins, corr_reject, config, **kwargs):
 
         stats = top_50.take([0]).rename(columns={column: 'top', f'count({column})': 'freq'}).iloc[0]
 
+        others_count = 0
+        others_distinct_count = 0
         if top_50.shape[0] > 50:
-            others_count = pd.Series([value_counts.select(df_sum("count({c})".format(c=column))).toPandas.iloc[0, 0] - top_50["count({c})".format(c=column)].sum()],
-                                     index=["***Other Values***"])
-            others_distinct_count = pd.Series([value_counts.count() - 50],
-                                              index=["***Other Values Distinct Count***"])
-        else:
-            others_count = pd.Series([0], index=["***Other Values***"])
-            others_distinct_count = pd.Series([0], index=["***Other Values Distinct Count***"])
+            others_count = value_counts.select(df_sum("count({c})".format(c=column))).toPandas.iloc[0, 0] - top_50["count({c})".format(c=column)].sum()
+            others_distinct_count = value_counts.count() - 50
 
+        value_counts.unpersist()
         top = top_50.set_index(column)["count({c})".format(c=column)]
-        top = top.append(others_count)
-        top = top.append(others_distinct_count)
+        top["***Other Values***"] = others_count
+        top["***Other Values Distinct Count***"] = others_distinct_count
         stats["value_counts"] = top
         stats["type"] = "CAT"
-        value_counts.unpersist()
         unparsed_valid_jsons = df.select(column).na.drop().rdd.map(
             lambda x: guess_json_type(x[column])).filter(
             lambda x: x).distinct().collect()
