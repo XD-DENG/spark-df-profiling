@@ -350,16 +350,14 @@ def describe(df, bins, corr_reject, config, **kwargs):
 
         stats = top_50.take([0]).rename(columns={column: 'top', f'count({column})': 'freq'}).ix[0]
 
-        top_50_categories = top_50[column].values.tolist()
-
-        others_count = pd.Series([df.select(column).na.drop()
-                        .where(~(col(column).isin(*top_50_categories)))
-                        .count()
-                        ], index=["***Other Values***"])
-        others_distinct_count = pd.Series([value_counts
-                                .where(~(col(column).isin(*top_50_categories)))
-                                .count()
-                                ], index=["***Other Values Distinct Count***"])
+        if top_50.shape[0] > 50:
+            others_count = pd.Series([value_counts.select(df_sum("count({c})".format(c=column))).toPandas.iloc[0, 0] - top_50["count({c})".format(c=column)].sum()],
+                                     index=["***Other Values***"])
+            others_distinct_count = pd.Series([value_counts.count() - 50],
+                                              index=["***Other Values Distinct Count***"])
+        else:
+            others_count = pd.Series([0], index=["***Other Values***"])
+            others_distinct_count = pd.Series([0], index=["***Other Values Distinct Count***"])
 
         top = top_50.set_index(column)["count({c})".format(c=column)]
         top = top.append(others_count)
