@@ -336,9 +336,8 @@ def describe(df, bins, corr_reject, config, **kwargs):
         return type(obj)
 
     def describe_categorical_1d(df, column):
-        
         count_column_name = "count({c})".format(c=column)
-        
+
         value_counts = (df.select(column).na.drop()
                         .groupBy(column)
                         .agg(count(col(column)))
