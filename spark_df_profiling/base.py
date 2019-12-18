@@ -351,8 +351,8 @@ def describe(df, bins, corr_reject, config, **kwargs):
 
         others_count = 0
         others_distinct_count = 0
-        if top_50.shape[0] > 50:
-            others_count = value_counts.select(df_sum("count({c})".format(c=column))).toPandas.iloc[0, 0] - top_50["count({c})".format(c=column)].sum()
+        if top_50.shape[0] == 50:
+            others_count = value_counts.select(df_sum("count({c})".format(c=column))).toPandas().iloc[0, 0] - top_50["count({c})".format(c=column)].sum()
             others_distinct_count = value_counts.count() - 50
 
         value_counts.unpersist()
