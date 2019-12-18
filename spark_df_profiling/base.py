@@ -336,28 +336,32 @@ def describe(df, bins, corr_reject, config, **kwargs):
         return type(obj)
 
     def describe_categorical_1d(df, column):
+        
+        count_column_name = "count({c})".format(c=column)
+        
         value_counts = (df.select(column).na.drop()
                         .groupBy(column)
                         .agg(count(col(column)))
-                        .orderBy("count({c})".format(c=column),ascending=False)
+                        .orderBy(count_column_name, ascending=False)
                        ).cache()
 
         # Get the top 50 classes by value count,
         # and put the rest of them grouped at the
         # end of the Series:
-        top_50 = value_counts.limit(50).toPandas().sort_values("count({c})".format(c=column),
+        top_50 = value_counts.limit(50).toPandas().sort_values(count_column_name,
                                                                ascending=False)
 
-        stats = top_50.take([0]).rename(columns={column: 'top', f'count({column})': 'freq'}).iloc[0]
+        stats = top_50.take([0]).rename(columns={column: 'top', count_column_name: 'freq'}).iloc[0]
 
         others_count = 0
         others_distinct_count = 0
-        if top_50.shape[0] == 50:
-            others_count = value_counts.select(df_sum("count({c})".format(c=column))).toPandas().iloc[0, 0] - top_50["count({c})".format(c=column)].sum()
-            others_distinct_count = value_counts.count() - 50
+        unique_categories_count = value_counts.count()
+        if unique_categories_count > 50:
+            others_count = value_counts.select(df_sum(count_column_name)).toPandas().iloc[0, 0] - top_50[count_column_name].sum()
+            others_distinct_count = unique_categories_count - 50
 
         value_counts.unpersist()
-        top = top_50.set_index(column)["count({c})".format(c=column)]
+        top = top_50.set_index(column)[count_column_name]
         top["***Other Values***"] = others_count
         top["***Other Values Distinct Count***"] = others_distinct_count
         stats["value_counts"] = top
